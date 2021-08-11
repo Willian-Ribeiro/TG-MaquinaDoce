@@ -52,6 +52,7 @@ uint8_t broadcastAddress[] = {0x48, 0x3F, 0xDA, 0xAA, 0x51, 0xCF}; // 48:3F:DA:A
 // Must match the sender structure
 typedef struct struct_message {
   int led_val;
+  int PWM1;
 } struct_message;
 
 //Create a struct_message called myData
@@ -115,9 +116,9 @@ var connection = new WebSocket('ws://'+location.hostname+':81/');
 
 var button_1_status = 0;
 var button_2_status = 0;
+var slider_val = 0;
 var sens_data = 0;
 connection.onmessage = function(event){
-
   var full_data = event.data;
   console.log(full_data);
   var data = JSON.parse(full_data);
@@ -126,9 +127,17 @@ connection.onmessage = function(event){
   document.getElementById("sensor_value").innerHTML = sens_data;
 }
 
+function updateSlider(slideAmount) {
+  var sliderDiv = document.getElementById("sliderAmount");
+  sliderDiv.innerHTML = slideAmount;
+  slider_val = slideAmount;
+  console.log("Slider Amount is" + slideAmount);
+  send_data();
+}
+
 function button_1_on()
 {
-   button_1_status = 1; 
+  button_1_status = 1; 
   console.log("LED 1 is ON");
   send_data();
 }
@@ -136,13 +145,13 @@ function button_1_on()
 function button_1_off()
 {
   button_1_status = 0;
-console.log("LED 1 is OFF");
-send_data();
+  console.log("LED 1 is OFF");
+  send_data();
 }
 
 function button_2_on()
 {
-   button_2_status = 1; 
+  button_2_status = 1; 
   console.log("LED 2 is ON");
   send_data();
 }
@@ -150,13 +159,13 @@ function button_2_on()
 function button_2_off()
 {
   button_2_status = 0;
-console.log("LED 2 is OFF");
-send_data();
+  console.log("LED 2 is OFF");
+  send_data();
 }
 
 function send_data()
 {
-  var full_data = '{"LED1" :'+button_1_status+',"LED2":'+button_2_status+'}';
+  var full_data = '{"LED1" :'+button_1_status+', "LED2":'+button_2_status+', "PWM1":'+slider_val+'}';
   connection.send(full_data);
 }
 
@@ -195,7 +204,13 @@ function send_data()
         <button onclick= "button_1_on()" >On</button><button onclick="button_1_off()" >Off</button>
       </div>
       <div class="card humidity">
-        <p class="card-title"><i class="fas fa-tint"></i> BOARD #1 - MAIN MOTOR</p><p><span class="reading"><span id="h1"></span> &percnt;</span></p><p class="timestamp">Last Reading: <span id="rh1"></span></p>
+        <p class="card-title"><i class="fas fa-tint"></i> BOARD #1 - MAIN MOTOR</p><p>
+        <div class="slidecontainer">
+          <p>Default range slider:</p>
+          <input type="range" min="0" max="255" value="0" step="1" onchange="updateSlider(this.value)">
+        </div>
+        <div id="sliderAmount"></div>
+        </p><p class="timestamp">Last Reading: <span id="rh1"></span></p>
       </div>
     </div>
   </div>
@@ -245,6 +260,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
 
     // --------------------------------------------
     myData.led_val = doc["LED1"];
+    myData.PWM1 = doc["PWM1"];
       
     esp_now_send(broadcastAddress, (uint8_t *) &myData, sizeof(myData));
     Serial.println("Assync package sent");
