@@ -33,7 +33,7 @@
  * Advanced settings can be found in Configuration_adv.h
  *
  */
-#define CONFIGURATION_H_VERSION 020006
+#define CONFIGURATION_H_VERSION 0001
 
 //===========================================================================
 //============================= Getting Started =============================
@@ -44,12 +44,6 @@
 //#define CUSTOM_VERSION_FILE Version.h // Path from the root directory (no quotes)
 
 /**
- * Select a serial port on the board to use for communication with the host.
- * :[-1, 0, 1, 2, 3, 4, 5, 6, 7]
- */
-#define SERIAL_PORT 0
-
-/**
  * This setting determines the communication speed of the machine.
  * :[2400, 9600, 19200, 38400, 57600, 115200, 250000, 500000, 1000000]
  */
@@ -58,31 +52,42 @@
 // Name displayed in the LCD "Ready" message and Info menu
 #define CUSTOM_MACHINE_NAME "My 3D Printer"
 
-// Machine's unique ID, used by some programs to differentiate between machines model/version.
-// Choose your own or use a service like https://www.uuidgenerator.net/version4
-//#define MACHINE_UUID "00000000-0000-0000-0000-000000000000"
+// Default LED outputs in board
+#define LED1 D0
+#define LED2 D4 // same as LED_BUILTIN
+
+// MAC Address, machine's unique ID. Must be defined for each controller in the project
+#define SERVER_MAC_ADDRESS {0xB4, 0xE6, 0x2D, 0x37, 0x1C, 0x1F}
+#define MIXER_MAC_ADDRESS {0x48, 0x3F, 0xDA, 0xAA, 0x51, 0xCF}
+// #define INJETORA {0x48, 0x3F, 0xDA, 0xAA, 0x51, 0xCF}
+// #define MODELADORA {0x48, 0x3F, 0xDA, 0xAA, 0x51, 0xCF}
+// #define GRANULADORA {0x48, 0x3F, 0xDA, 0xAA, 0x51, 0xCF}
+// #define EMPACOTADEIRA {0x48, 0x3F, 0xDA, 0xAA, 0x51, 0xCF}
+
+#define WIFI_SSID "esp_server"
+
 
 //#define MAGNETIC_PARKING_EXTRUDER
 
-#if EITHER(PARKING_EXTRUDER, MAGNETIC_PARKING_EXTRUDER)
+// #if EITHER(PARKING_EXTRUDER, MAGNETIC_PARKING_EXTRUDER)
 
-  #if ENABLED(PARKING_EXTRUDER)
+//   #if ENABLED(PARKING_EXTRUDER)
 
-    #define PARKING_EXTRUDER_SOLENOIDS_INVERT           // If enabled, the solenoid is NOT magnetized with applied voltage
-    #define PARKING_EXTRUDER_SOLENOIDS_PINS_ACTIVE LOW  // LOW or HIGH pin signal energizes the coil
-    #define PARKING_EXTRUDER_SOLENOIDS_DELAY 250        // (ms) Delay for magnetic field. No delay if 0 or not defined.
-    //#define MANUAL_SOLENOID_CONTROL                   // Manual control of docking solenoids with M380 S / M381
+//     #define PARKING_EXTRUDER_SOLENOIDS_INVERT           // If enabled, the solenoid is NOT magnetized with applied voltage
+//     #define PARKING_EXTRUDER_SOLENOIDS_PINS_ACTIVE LOW  // LOW or HIGH pin signal energizes the coil
+//     #define PARKING_EXTRUDER_SOLENOIDS_DELAY 250        // (ms) Delay for magnetic field. No delay if 0 or not defined.
+//     //#define MANUAL_SOLENOID_CONTROL                   // Manual control of docking solenoids with M380 S / M381
 
-  #elif ENABLED(MAGNETIC_PARKING_EXTRUDER)
+//   #elif ENABLED(MAGNETIC_PARKING_EXTRUDER)
 
-    #define MPE_FAST_SPEED      9000      // (mm/m) Speed for travel before last distance point
-    #define MPE_SLOW_SPEED      4500      // (mm/m) Speed for last distance travel to park and couple
-    #define MPE_TRAVEL_DISTANCE   10      // (mm) Last distance point
-    #define MPE_COMPENSATION       0      // Offset Compensation -1 , 0 , 1 (multiplier) only for coupling
+//     #define MPE_FAST_SPEED      9000      // (mm/m) Speed for travel before last distance point
+//     #define MPE_SLOW_SPEED      4500      // (mm/m) Speed for last distance travel to park and couple
+//     #define MPE_TRAVEL_DISTANCE   10      // (mm) Last distance point
+//     #define MPE_COMPENSATION       0      // Offset Compensation -1 , 0 , 1 (multiplier) only for coupling
 
-  #endif
+//   #endif
 
-#endif
+// #endif
 
 // @section temperature
 
