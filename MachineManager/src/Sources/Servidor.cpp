@@ -1,0 +1,93 @@
+#include "../Headers/Servidor.h"
+
+AsyncWebServer Servidor::server(80);
+WebSocketsServer Servidor::websockets(81);
+Data Servidor::myData = Data();
+const char* Servidor::webPage = "empty";
+
+Servidor::Servidor(const char* webPage)
+{
+  this->webPage = webPage;
+}
+
+void Servidor::initialize()
+{
+    server.on("/", [](AsyncWebServerRequest * request)
+    { 
+        request->send_P(200, "text/html", webPage);
+    });
+
+    server.onNotFound(notFound);
+    
+    server.begin();  // it will start webserver
+    websockets.begin();
+    websockets.onEvent(webSocketEvent);
+
+    // Begin WiFi
+    WiFi.softAP("esp_server", "");
+    Serial.println("softap");
+    Serial.println("");
+    Serial.println(WiFi.softAPIP());
+
+
+    if (MDNS.begin("esp")) { //esp.local/ //
+        Serial.println("MDNS responder started");
+    }
+
+    int32_t channel = getWiFiChannel(WIFI_SSID);
+
+    WiFi.printDiag(Serial); // Uncomment to verify channel number before
+    wifi_promiscuous_enable(1);
+    wifi_set_channel(channel);
+    wifi_promiscuous_enable(0);
+    WiFi.printDiag(Serial); // Uncomment to verify channel change after
+}
+
+void Servidor::notFound(AsyncWebServerRequest *request)
+{
+    request->send(404, "text/plain", "Page Not found");
+}
+
+void Servidor::webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
+{
+    switch (type)
+    {
+    case WStype_ERROR:
+        Serial.printf("[%u] Error in websocket!\n", num);
+        break;
+    case WStype_DISCONNECTED:
+        Serial.printf("[%u] Disconnected!\n", num);
+        break;
+    case WStype_CONNECTED:
+    {
+        IPAddress ip = websockets.remoteIP(num);
+        Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
+    }
+    break;
+    case WStype_TEXT:
+        Serial.printf("[%u] get Text: %s\n", num, payload);
+        String message = String((char *)(payload));
+        Serial.println(message);
+
+        // parse Json to Data object
+        myData.dataFromJson(message);
+        digitalWrite(LED1, myData.led1);
+
+        EspNowCallbacks::sendMessage(Machines::mixer, myData);
+        
+    }
+
+}
+
+int32_t Servidor::getWiFiChannel(const char *ssid)
+{
+    if (int32_t n = WiFi.scanNetworks()) {
+        for (uint8_t i=0; i<n; i++)
+        {
+            if (!strcmp(ssid, WiFi.SSID(i).c_str())) {
+                return WiFi.channel(i);
+            }
+        }
+    }
+    return 0;
+}

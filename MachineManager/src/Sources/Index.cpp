@@ -1,77 +1,6 @@
-#include "Servidor.h"
+#include "./Headers/Index.h"
 
-AsyncWebServer Servidor::server(80);
-WebSocketsServer Servidor::websockets(81);
-Data Servidor::myData = Data();
-
-
-void Servidor::notFound(AsyncWebServerRequest *request)
-{
-    request->send(404, "text/plain", "Page Not found");
-}
-
-void Servidor::webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
-{
-    switch (type)
-    {
-    case WStype_ERROR:
-        Serial.printf("[%u] Error in websocket!\n", num);
-        break;
-    case WStype_DISCONNECTED:
-        Serial.printf("[%u] Disconnected!\n", num);
-        break;
-    case WStype_CONNECTED:
-    {
-        IPAddress ip = websockets.remoteIP(num);
-        Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
-    }
-    break;
-    case WStype_TEXT:
-        Serial.printf("[%u] get Text: %s\n", num, payload);
-        String message = String((char *)(payload));
-        Serial.println(message);
-
-        DynamicJsonDocument doc(200);
-        DeserializationError error = deserializeJson(doc, message);
-        // parse the parameters we expect to receive (TO-DO: error handling)
-        if (error)
-        {
-            Serial.print("deserializeJson() failed: ");
-            Serial.println(error.c_str());
-            return;
-        }
-
-        // int LED1_status = doc["LED1"];
-        // int LED2_status = doc["LED2"];
-        // digitalWrite(LED_BUILTIN,LED1_status);
-        // digitalWrite(LED2,LED2_status);
-
-        // --------------------------------------------
-        myData.led1 = doc["LED1"];
-        myData.led2 = doc["LED2"];
-
-        digitalWrite(LED1, myData.led1);
-
-        esp_now_send((uint8_t *)&Machines::mixer, (uint8_t *)&myData, sizeof(myData));
-        Serial.println("Assync package sent");
-    }
-
-}
-
-int32_t Servidor::getWiFiChannel(const char *ssid)
-{
-    if (int32_t n = WiFi.scanNetworks()) {
-        for (uint8_t i=0; i<n; i++)
-        {
-            if (!strcmp(ssid, WiFi.SSID(i).c_str())) {
-                return WiFi.channel(i);
-            }
-        }
-    }
-    return 0;
-}
-
-static const char webPagez[] PROGMEM = R"=====(
+const char Index::webPage[] PROGMEM = R"=====(
 
 <!DOCTYPE html>
 <html>
@@ -186,44 +115,7 @@ function send_data()
 </html>
 )=====";
 
-// Servidor::Servidor(const char* webP)
-Servidor::Servidor()
+const char* Index::getIndexPage()
 {
-    // for (byte k = 0; k < strlen_P(webPagez); k++) {
-        // webPage = pgm_read_byte_near(webPagez + k);
-        // Serial.print(webPage);
-    // }
-}
-
-void Servidor::initialize()
-{
-    server.on("/", [](AsyncWebServerRequest * request)
-    { 
-        request->send_P(200, "text/html", webPagez);
-    });
-
-    server.onNotFound(notFound);
-    
-    server.begin();  // it will start webserver
-    websockets.begin();
-    websockets.onEvent(webSocketEvent);
-
-    // Begin WiFi
-    WiFi.softAP("esp_server", "");
-    Serial.println("softap");
-    Serial.println("");
-    Serial.println(WiFi.softAPIP());
-
-
-    if (MDNS.begin("esp")) { //esp.local/ //
-        Serial.println("MDNS responder started");
-    }
-
-    int32_t channel = getWiFiChannel(WIFI_SSID);
-
-    WiFi.printDiag(Serial); // Uncomment to verify channel number before
-    wifi_promiscuous_enable(1);
-    wifi_set_channel(channel);
-    wifi_promiscuous_enable(0);
-    WiFi.printDiag(Serial); // Uncomment to verify channel change after
+    return webPage;
 }

@@ -10,31 +10,25 @@
 #error "Board not found"
 #endif
 
-#include <ArduinoJson.h>
 #include <WebSocketsServer.h>
 #include <ESPAsyncWebServer.h>
-
-#include <espnow.h>
+#include "EspNowCallbacks.h"
 
 #include "../Configuration.h"
 #include "MachineConstants.h"
+#include "Data.h"
 
 class Servidor
 {
-    // private:
-    //     static const char* indexLala;
+    private:
+        static const char* webPage;
 
     public:
         static AsyncWebServer server; // server port 80
         static Data myData;
-        // static char webPage;
-
-    // public:
-
         static WebSocketsServer websockets;
 
-        // Servidor(const char* webP);
-        Servidor();
+        Servidor(const char* webPage);
 
         static void notFound(AsyncWebServerRequest *request);
 

@@ -1,4 +1,4 @@
-#include "EspNowCallbacks.h"
+#include "../Headers/EspNowCallbacks.h"
 
 Data EspNowCallbacks::incomingReadings = Data();
 
@@ -46,4 +46,10 @@ void EspNowCallbacks::OnDataSent(uint8_t *mac_addr, uint8_t sendStatus)
     {
         Serial.println("Delivery fail");
     }
+}
+
+void EspNowCallbacks::sendMessage(const uint8_t *machine, Data &data)
+{
+    esp_now_send((uint8_t *) machine, (uint8_t *) &data, sizeof(data));
+    Serial.println("Assync package sent");
 }

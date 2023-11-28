@@ -20,9 +20,3 @@ class Machines
 		}
 };
 
-class Data
-{
-    public:
-        int led1;
-        int led2;
-};

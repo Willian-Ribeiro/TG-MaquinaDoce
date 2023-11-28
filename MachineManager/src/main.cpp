@@ -1,28 +1,45 @@
 #include <Arduino.h>
-#include <ArduinoJson.h>
-
 #include "../Configuration.h"
-#include "MachineConstants.h"
-#include "Servidor.h"
-#include "EspNowCallbacks.h"
+#include "./Headers/Servidor.h"
+#include "./Headers/EspNowCallbacks.h"
+#include "./Headers/Index.h"
 
-Servidor* server = new Servidor();
-EspNowCallbacks* espnow = new EspNowCallbacks();
+#if MACHINE_SERVER == true
+  Servidor* server = new Servidor(Index::getIndexPage());
+  EspNowCallbacks* espnow = new EspNowCallbacks();
 
-void setup(void)
-{
-  Serial.begin(115200);
-  pinMode(LED_BUILTIN, OUTPUT);
-  pinMode(LED1,OUTPUT);
-  pinMode(LED2,OUTPUT);
+  void setup(void)
+  {
+    Serial.begin(BAUDRATE);
+    pinMode(LED_BUILTIN, OUTPUT);
+    pinMode(LED1,OUTPUT);
+    pinMode(LED2,OUTPUT);
+    
+    server->initialize();
+    espnow->initialize();
+  }
 
-  server->initialize();
-  espnow->initialize();
-  
-}
+  void loop(void)
+  {
+    server->websockets.loop();
+  }
+#else
+  EspNowCallbacks* espnow = new EspNowCallbacks();
 
+  void setup(void)
+  {
+    Serial.begin(BAUDRATE);
+    pinMode(LED_BUILTIN, OUTPUT);
+    pinMode(LED1,OUTPUT);
+    pinMode(LED2,OUTPUT);
+    
+    espnow->initialize();
+  }
 
-void loop(void)
-{
-  server->websockets.loop();
-}
+  void loop(void)
+  {
+    Serial.println("Outra maquina seleciuonada");
+    delay(1000);
+  }
+#endif
+
