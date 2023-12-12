@@ -97,5 +97,30 @@ void IRAM_ATTR resetModule(){
 
 */
 
+#include "../Headers/Watchdog.h"
 
+// Ticker Watchdog::secondTick = Ticker();
+// volatile int Watchdog::watchdogCount = 0;
 
+void Watchdog::initialize()
+{
+    // Serial.begin(BAUDRATE);
+    // secondTick.attach(1, isrWatchdog);
+}
+
+void Watchdog::isrWatchdog()
+{
+    watchdogCount++;
+    if(watchdogCount == 5)
+    {
+        // Serial.println();
+        // Serial.println("The watchdog bites!!!!");
+        // ESP.reset();
+    }
+}
+
+void Watchdog::watchdogCheck()
+{
+    // Serial.printf("Watchdog counter = %d\n", watchdogCount);
+    // watchdogCount = 0;
+}

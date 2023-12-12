@@ -22,6 +22,7 @@ class Servidor
 {
     private:
         static const char* webPage;
+        static EspNowCallbacks espnow;
 
     public:
         static AsyncWebServer server; // server port 80
@@ -29,6 +30,8 @@ class Servidor
         static WebSocketsServer websockets;
 
         Servidor(const char* webPage);
+
+        static void loopServer();
 
         static void notFound(AsyncWebServerRequest *request);
 

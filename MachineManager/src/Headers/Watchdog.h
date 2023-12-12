@@ -21,4 +21,20 @@
     ESP8266 comes pre set with a watchdog that resets the board if no feed is sent after 3.2 seconds
     For functions that might need to process for longer than 3.2 s the function yield() can be used to
     send feed signal.
- /*
+ */
+ 
+#include <Arduino.h>
+#include <Ticker.h>
+
+#include "../Configuration.h"
+
+class Watchdog
+{
+   public:
+      static Ticker secondTick;
+      static volatile int watchdogCount;
+
+      static void initialize();
+      static void isrWatchdog();
+      static void watchdogCheck();
+};

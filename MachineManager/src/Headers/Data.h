@@ -1,12 +1,14 @@
 #pragma once
 
 #include <ArduinoJson.h>
+#include "../Configuration.h"
 
 class Data
 {
     public:
-        int led1;
-        int led2;
+        unsigned long int operationTime;
+        unsigned long int motorSpeed;
 
         void dataFromJson(String message);
+        String sendJsonDataServer();
 };

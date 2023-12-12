@@ -8,6 +8,8 @@ class Machines
     public:
         static const uint8_t server[];
         static const uint8_t mixer[];
+        static const uint8_t modeler[];
+        static const uint8_t packer[];
 
         static char* getMachineAddress(const uint8_t* mac_addr)
         {

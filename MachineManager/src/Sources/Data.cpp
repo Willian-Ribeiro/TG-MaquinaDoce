@@ -13,6 +13,25 @@ void Data::dataFromJson(String message)
     }
 
     // Object (named doc) in struct format becomes available with data received
-    led1 = doc["LED1"];
-    led2 = doc["LED2"];
+    // Used only when server receives data from webpage
+    operationTime = doc["OPERATION_TIME"];
+    motorSpeed = doc["MOTOR_SPEED"];
+    Serial.println("DEserialized Data: ");
+    String msg = String(operationTime) + " speed: " + String(motorSpeed);
+    Serial.println(msg);
+}
+
+String Data::sendJsonDataServer()
+{
+    DynamicJsonDocument doc(200);
+    doc["OPERATION_TIME"] = operationTime;
+    doc["MOTOR_SPEED"] = motorSpeed;
+
+    // Serial.print("serializeJson() succesfull");
+
+    String msg;
+    serializeJson(doc, msg);
+    Serial.println("serialized Data: ");
+    Serial.println(msg);
+    return msg;
 }

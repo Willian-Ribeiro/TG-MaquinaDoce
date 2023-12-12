@@ -3,6 +3,7 @@
 AsyncWebServer Servidor::server(80);
 WebSocketsServer Servidor::websockets(81);
 Data Servidor::myData = Data();
+EspNowCallbacks Servidor::espnow = EspNowCallbacks();
 const char* Servidor::webPage = "empty";
 
 Servidor::Servidor(const char* webPage)
@@ -10,8 +11,20 @@ Servidor::Servidor(const char* webPage)
   this->webPage = webPage;
 }
 
+void Servidor::loopServer()
+{
+    if(EspNowCallbacks::updateData(&myData))
+    {
+        Serial.print("\n\n Data to serialize by function: ");
+        Serial.println(myData.motorSpeed);
+        websockets.broadcastTXT(myData.sendJsonDataServer().c_str());
+    }
+}
+
 void Servidor::initialize()
 {
+    EspNowCallbacks::initialize();
+
     server.on("/", [](AsyncWebServerRequest * request)
     { 
         request->send_P(200, "text/html", webPage);
@@ -71,10 +84,13 @@ void Servidor::webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size
 
         // parse Json to Data object
         myData.dataFromJson(message);
-        digitalWrite(LED1, myData.led1);
+
+        // Serial.print("myData operation Time ");Serial.print(myData.operationTime);
+        // Serial.print("myData motor speed ");Serial.println(myData.motorSpeed);
 
         EspNowCallbacks::sendMessage(Machines::mixer, myData);
-        
+        // EspNowCallbacks::sendMessage(Machines::modeler, myData);
+        // EspNowCallbacks::sendMessage(Machines::packer, myData);
     }
 
 }
