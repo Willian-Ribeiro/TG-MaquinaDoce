@@ -16,7 +16,7 @@ void Servidor::loopServer()
     if(EspNowCallbacks::updateData(&myData))
     {
         Serial.print("\n\n Data to serialize by function: ");
-        Serial.println(myData.motorSpeed);
+        myData.printData();
         websockets.broadcastTXT(myData.sendJsonDataServer().c_str());
     }
 }
@@ -78,6 +78,7 @@ void Servidor::webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size
     }
     break;
     case WStype_TEXT:
+        Serial.println("Received data from web page");
         Serial.printf("[%u] get Text: %s\n", num, payload);
         String message = String((char *)(payload));
         Serial.println(message);
@@ -85,12 +86,12 @@ void Servidor::webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size
         // parse Json to Data object
         myData.dataFromJson(message);
 
-        // Serial.print("myData operation Time ");Serial.print(myData.operationTime);
-        // Serial.print("myData motor speed ");Serial.println(myData.motorSpeed);
-
-        EspNowCallbacks::sendMessage(Machines::mixer, myData);
-        // EspNowCallbacks::sendMessage(Machines::modeler, myData);
-        // EspNowCallbacks::sendMessage(Machines::packer, myData);
+        if(myData.dataSource == DATA_SOURCE_MIXER)
+            EspNowCallbacks::sendMessage(Machines::mixer, myData);
+        if(myData.dataSource == DATA_SOURCE_MODELER)
+            EspNowCallbacks::sendMessage(Machines::modeler, myData);
+        if(myData.dataSource == DATA_SOURCE_GRANULATOR)
+            EspNowCallbacks::sendMessage(Machines::granulator, myData);
     }
 
 }

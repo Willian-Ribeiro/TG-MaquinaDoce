@@ -46,10 +46,10 @@
  * :[MACHINE_SERVER, MACHINE_MIXER, MACHINE_MODELER, MACHINE_PACKER]
  * OBS! : Only ONE option must be set as true!!!
  */
-#define MACHINE_SERVER true
+#define MACHINE_SERVER false
 #define MACHINE_MIXER false
-#define MACHINE_MODELER false
-#define MACHINE_PACKER false
+#define MACHINE_MODELER true
+#define MACHINE_GRANULATOR false
 
 /**
  * Set communication baud rate, default is 115200
@@ -64,13 +64,21 @@
 #define SERVER_MAC_ADDRESS {0xB4, 0xE6, 0x2D, 0x37, 0x1C, 0x1F}
 #define MIXER_MAC_ADDRESS {0xF4, 0xCF, 0xA2, 0xEF, 0x40, 0xF6}
 #define MODELER_MAC_ADDRESS {0x48, 0x3F, 0xDA, 0xAA, 0x51, 0xCF}
-#define PACKER_MAC_ADDRESS {0x48, 0x3F, 0xDA, 0xAA, 0x51, 0xCF}
+#define GRANULATOR_MAC_ADDRESS {0x48, 0x3F, 0xDA, 0xAA, 0xFC, 0x11}
 
 /**
  * General configs.
  * Definitions used throughout the projetct by more than one machine
 */
 #define WIFI_SSID "esp_server"
+#define DATA_SOURCE_MIXER "mixer"
+#define DATA_SOURCE_MODELER "modeler"
+#define DATA_SOURCE_GRANULATOR "granulator"
+
+//===================== General Pinout Definition =====================
+#define LED1 D0
+#define LED2 D4 // same as LED_BUILTIN
+#define DUMMY_PIN 50
 
 //=============================================================================
 //============================= Server Settings ===============================
@@ -115,9 +123,9 @@
 
 //===================== Pinout Definition =====================
 // dummy definitions
-#define RELAY_1 50
-#define RELAY_2 50
-#define MIXER_PWM 50
+#define RELAY_1 DUMMY_PIN
+#define RELAY_2 DUMMY_PIN
+#define MIXER_PWM DUMMY_PIN
 
 #if MACHINE_MIXER == true
 
@@ -138,27 +146,77 @@
 //=============================================================================
 //============================= Modeler Settings ===============================
 //=============================================================================
-#if MACHINE_MODELER == true
 
+#define STEPS_PER_REVOLUTION 2048  // 32 steps pre revolution x 64 = 2048
+#define REVOLUTIONS_TO_EOC 0.9 // revolutions required to reach end of cursor
+#define EOC_TARGET_POSITION REVOLUTIONS_TO_EOC*STEPS_PER_REVOLUTION
+#define MB_MOVE_FROM_LIMIT_SWITCH 150
 
+// Extruder
+#define EXTRUDER_MAX_SPEED 500
+#define EXTRUDER_SPEED 400
+#define EXTRUDER_STEP_DELAY 800
+#define EXTRUDER_SKIPS 170
+
+// Molding Block
+#define MB_MAX_SPEED 1000
+#define MB_EOC_CALIBRATION_SPEED 400
+#define MB_ACCELERATION 5000
+#define MB_SKIPS 100
 
 //===================== Pinout Definition =====================
+// DUMMY DEFINITIONS
+// Extruder
+#define EXTRUDER_STEP DUMMY_PIN // D0
+#define EXTRUDER_DIR DUMMY_PIN  // D1
 
-#define LED1 D0
-#define LED2 D4 // same as LED_BUILTIN
+// ULN2003 Motor Driver Pins
+// Molding Block Motor1
+#define MB_M1_IN1 DUMMY_PIN // D5
+#define MB_M1_IN2 DUMMY_PIN // D6
+#define MB_M1_IN3 DUMMY_PIN // D7
+#define MB_M1_IN4 DUMMY_PIN // D8
+
+// Limit switch sensor
+#define LIMIT_SWITCH DUMMY_PIN // D4
+
+#if MACHINE_MODELER == true
+
+// Extruder
+#define EXTRUDER_STEP 16 // D0
+#define EXTRUDER_DIR 5  // D1
+
+// ULN2003 Motor Driver Pins
+// Molding Block Motor1
+#define MB_M1_IN1 14 // D5
+#define MB_M1_IN2 12 // D6
+#define MB_M1_IN3 13 // D7
+#define MB_M1_IN4 15 // D8
+
+// Limit switch sensor
+#define LIMIT_SWITCH 2 // D4
 
 #endif
 
 //=============================================================================
-//============================= Packer Settings ===============================
+//============================= Granulator Settings ===============================
 //=============================================================================
-#if MACHINE_PACKER == true
+#define ROTATING_BLADES_MIN_SPEED 0
+#define ROTATING_BLADES_MAX_SPEED 100
+#define MAT_MOTORS_MIN_SPEED 0
+#define MAT_MOTORS_MAX_SPEED 100
 
-
+#define PWM_MIN_SPEED 0
+#define PWM_MAX_SPEED 255
 
 //===================== Pinout Definition =====================
+// DUMMY DEFINITIONS
+#define ROTATING_BLADES_PIN DUMMY_PIN
+#define MAT_MOTORS_PIN DUMMY_PIN
 
-#define LED1 D0
-#define LED2 D4 // same as LED_BUILTIN
+
+#if MACHINE_GRANULATOR == true
+#define ROTATING_BLADES_PIN D1
+#define MAT_MOTORS_PIN D2
 
 #endif

@@ -21,14 +21,15 @@ void EspNowCallbacks::initialize()
     esp_now_register_recv_cb(EspNowCallbacks::OnDataRecv);
     esp_now_register_send_cb(EspNowCallbacks::OnDataSent);
 
+    // adding other machines to communication list
     if(!MACHINE_SERVER)
         esp_now_add_peer((uint8_t *)&Machines::server, ESP_NOW_ROLE_COMBO, 1, NULL, 0);
     if(!MACHINE_MIXER)
         esp_now_add_peer((uint8_t *)&Machines::mixer, ESP_NOW_ROLE_COMBO, 1, NULL, 0);
-    // if(!MACHINE_MODELER)
-    //     esp_now_add_peer((uint8_t *)&Machines::modeler, ESP_NOW_ROLE_COMBO, 1, NULL, 0);
-    // if(!MACHINE_PACKER)
-    //     esp_now_add_peer((uint8_t *)&Machines::packer, ESP_NOW_ROLE_COMBO, 1, NULL, 0);
+    if(!MACHINE_MODELER)
+        esp_now_add_peer((uint8_t *)&Machines::modeler, ESP_NOW_ROLE_COMBO, 1, NULL, 0);
+    if(!MACHINE_GRANULATOR)
+        esp_now_add_peer((uint8_t *)&Machines::granulator, ESP_NOW_ROLE_COMBO, 1, NULL, 0);
 
     dataUpdated = false;
 }
@@ -36,23 +37,20 @@ void EspNowCallbacks::initialize()
 // callback function that will be executed when data is received
 void EspNowCallbacks::OnDataRecv(uint8_t *mac_addr, uint8_t *incomingData, uint8_t len)
 {
-    Serial.println(Machines::getMachineAddress(mac_addr));
-
     memcpy(&incomingReadings, incomingData, sizeof(incomingReadings));
     dataUpdated = true;
 
-    Serial.printf("NOW OPERATION_TIME received value: %d \n", incomingReadings.operationTime);
-    Serial.printf("NOW MOTOR_SPEED received value: %d \n", incomingReadings.motorSpeed);
-    Serial.println();
+    // Serial.print("Received data from ");
+    // Serial.println(Machines::getMachineAddress(mac_addr));
+    // incomingReadings.printData();
 }
 
 void EspNowCallbacks::sendMessage(const uint8_t *machine, Data &data)
 {
     esp_now_send((uint8_t *) machine, (uint8_t *) &data, sizeof(data));
-    Serial.println("Assync package sent");
-    Serial.printf("NOW OPERATION_TIME sent value: %d \n", data.operationTime);
-    Serial.printf("NOW MOTOR_SPEED sent value: %d \n", data.motorSpeed);
-    Serial.println();
+    Serial.print("Sending data to ");
+    Serial.println(Machines::getMachineAddress(machine));
+    data.printData();
 }
 
 // Callback after sendMessage is executed
@@ -73,15 +71,16 @@ boolean EspNowCallbacks::updateData(Data *data)
 {
     if(dataUpdated)
     {
-        Serial.println("Updating myData");
         // memcpy(data, &incomingReadings, sizeof(data)); // discover why not working with motorSpeed
         dataUpdated = false;
 
+        data->dataSource = incomingReadings.dataSource;
+        data->operating = incomingReadings.operating;
         data->operationTime = incomingReadings.operationTime;
-        data->motorSpeed = incomingReadings.motorSpeed;
+        data->motorSpeed1 = incomingReadings.motorSpeed1;
+        data->motorSpeed2 = incomingReadings.motorSpeed2;
 
-        Serial.printf("Updated time value: %d \n", data->operationTime);
-        Serial.printf("updated speed value: %d \n", data->motorSpeed);
+        data->printData();
 
         return true;
     }

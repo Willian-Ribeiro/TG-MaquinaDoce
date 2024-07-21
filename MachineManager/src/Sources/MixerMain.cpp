@@ -13,6 +13,7 @@ void MixerMain::setupMixer(void)
 
     // ESP NOW communication
     EspNowCallbacks::initialize();
+    myData->dataSource = DATA_SOURCE_MIXER;
         
     // LCD initialization
     tft.init();
@@ -35,7 +36,14 @@ void MixerMain::loopMixer(void)
     {
         // update current values
         operationTime = myData->operationTime;
-        currentSpeed = myData->motorSpeed;
+
+        // map incoming value to motor speed
+        if(myData->motorSpeed1 > 50)
+            currentSpeed = SPEED_V2;
+        else if(myData->motorSpeed1 > 0)
+            currentSpeed = SPEED_V1;
+        else
+            currentSpeed = SPEED_OFF;
 
         // check what operations should be done
         if(!machineOperating && operationTime > 0)
@@ -126,7 +134,7 @@ void MixerMain::setMixerSpeed(int speed)
             digitalWrite(RELAY_2, !LOW);
         }
         currentSpeed = SPEED_V1;
-        myData->motorSpeed = currentSpeed;
+        myData->motorSpeed1 = currentSpeed;
         break;
     case SPEED_V2:
         if (machineOperating)
@@ -135,13 +143,13 @@ void MixerMain::setMixerSpeed(int speed)
             digitalWrite(RELAY_2, !HIGH);
         }
         currentSpeed = SPEED_V2;
-        myData->motorSpeed = currentSpeed;
+        myData->motorSpeed1 = currentSpeed;
         break;
     default:
         digitalWrite(RELAY_1, !LOW);
         digitalWrite(RELAY_2, !LOW);
         currentSpeed = SPEED_OFF;
-        myData->motorSpeed = currentSpeed;
+        myData->motorSpeed1 = currentSpeed;
         break;
     }
 }
@@ -390,8 +398,7 @@ void MixerMain::stopBtn()
     tft.drawString("STOP", STOP_BTN_X + (STOP_BTN_W / 2), STOP_BTN_Y + (STOP_BTN_H / 2));
 }
 
-// Calibrate function
-
+// Calibrate LCD screen function 
 void MixerMain::touch_calibrate()
 {
     uint16_t calData[5];

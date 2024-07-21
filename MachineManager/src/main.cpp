@@ -3,7 +3,7 @@
 #include "./Headers/EspNowCallbacks.h"
 #include "./Headers/Index.h"
 
-#if MACHINE_SERVER == true
+#if MACHINE_SERVER
   #include "./Headers/Servidor.h"
 
   Servidor* server = new Servidor(Index::getIndexPage());
@@ -26,7 +26,7 @@
   }
 #endif
 
-#if MACHINE_MIXER == true
+#if MACHINE_MIXER
   
   #include "./Headers/MixerMain.h"
 
@@ -43,36 +43,36 @@
   }
 #endif
 
-#if MACHINE_MODELER == true
+#if MACHINE_MODELER
   
-  #include "./Headers/MixerMain.h"
+  #include "./Headers/ModelerMain.h"
 
-  MixerMain* mixerMain = new MixerMain();
+  ModelerMain* modelerMain = new ModelerMain();
 
   void setup(void)
   {
-    mixerMain->setupMixer();
+    modelerMain->setupModeler();
   }
 
   void loop(void)
   {
-    mixerMain->loopMixer();
+    modelerMain->loopModeler();
   }
 #endif
 
-#if MACHINE_PACKER == true
+#if MACHINE_GRANULATOR
   
-  #include "./Headers/MixerMain.h"
+  #include "./Headers/GranulatorMain.h"
 
-  MixerMain* mixerMain = new MixerMain();
+  GranulatorMain* granulatorMain = new GranulatorMain();
 
   void setup(void)
   {
-    mixerMain->setupMixer();
+    granulatorMain->setupGranulator();
   }
 
   void loop(void)
   {
-    mixerMain->loopMixer();
+    granulatorMain->loopGranulator();
   }
 #endif

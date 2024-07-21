@@ -122,6 +122,28 @@ const char Index::webPageUpdated[] PROGMEM = R"=====(
 
 <script>
 
+class Data {
+  dataSource;
+  operating = false;
+  operationTime = 0;
+  motorSpeed1 = 0;
+  motorSpeed2 = 0;
+
+  constructor(dataSource, operating) {
+    this.dataSource = dataSource;
+  }
+}
+
+const DataSources = {
+  MIXER: "mixer",
+  MODELER: "modeler",
+  GRANULATOR: "granulator",
+};
+
+var mixerData = new Data(DataSources.MIXER);
+var modelerData = new Data(DataSources.MODELER);
+var granulatorData = new Data(DataSources.GRANULATOR);
+
 // send data
 var operation_time = 0; //  in seconds
 var motor_speed = 0; // SPEED_OFF:0, SPEED_V1:1, SPEED_V2:2
@@ -132,21 +154,45 @@ var slider_val = 0;
 // connection
 var connection = new WebSocket('ws://'+location.hostname+':81/');
 
-// When erceiving data from NODE_MCU
+// Sending data to NODE_MCU ---------------------------------------------------------
+function send_data(data)
+{
+  var timeMillis = operation_time * 1000;
+  
+  var full_data = '{"DATA_SOURCE":"'+data.dataSource+'", "OPERATING":'+data.operating+', "OPERATION_TIME":'+data.operationTime+', "MOTOR_SPEED1":'+data.motorSpeed1+', "MOTOR_SPEED2":'+data.motorSpeed2+'}';
+  
+  connection.send(full_data);
+}
+
+// Receiving data from NODE_MCU
 connection.onmessage = function(event){
-  //console.log("received a JSON message");
-  //console.log(event);
   var full_data = event.data;
-  //console.log(full_data);
   var data = JSON.parse(full_data); // JSON data into an object
   console.log(data);
-  //console.log(data.OPERATION_TIME);
-  //console.log(data.MOTOR_SPEED);
   
+  if(data.DATA_SOURCE === DataSources.MIXER)
+  	updateMixer(data);
+    
+  else if(data.DATA_SOURCE === DataSources.MODELER)
+  	updateModeler(data);
+    
+  else if(data.DATA_SOURCE === DataSources.GRANULATOR)
+  	updateGranulator(data);
+    
+  else
+  	console.log("Data source not found: " + data.DATA_SOURCE);
+}
+
+function updateMixer(data) {
+  // get data
+  mixerData.operating = data.OPERATING;
+  mixerData.operationTime = data.OPERATION_TIME / 1000; // milis to seconds
+  mixerData.motorSpeed1 = data.MOTOR_SPEED1;
+
+  // set HTML values
   // time
-  operation_time = data.OPERATION_TIME / 1000; // milis to seconds
-  var timeS = operation_time % 60; // remainder of seconds
-  var timeM = (operation_time - timeS) / 60; // seconds to min
+  var timeS = mixerData.operationTime % 60; // remainder of seconds
+  var timeM = (mixerData.operationTime - timeS) / 60; // seconds to min
   timeS = Math.trunc(timeS);
   
   document.getElementById("operationTime").innerHTML = timeM + ":" + pad(timeS);
@@ -154,39 +200,63 @@ connection.onmessage = function(event){
   if(operation_time == 0)
   	document.getElementById("txtOperationTime").style.display = ""; // reveal input box
   
-  // Speed
-  motor_speed = data.MOTOR_SPEED;
-  document.getElementById("sliderAmount").value = motor_speed * 50;
+  // Speed - SPEED_OFF:0, SPEED_V1:1, SPEED_V2:2
+  document.getElementById("sliderAmount").value = mixerData.motorSpeed1 * 50;
 
   var speedTxt = "";
-  if(motor_speed == 2)
+  if(mixerData.motorSpeed1 == 2)
     speedTxt = "SPEED_V2";
-  else if(motor_speed == 1)
+  else if(mixerData.motorSpeed1 == 1)
     speedTxt = "SPEED_V1";
-  else if(motor_speed == 0)
+  else if(mixerData.motorSpeed1 == 0)
     speedTxt = "SPEED_OFF";
   else
-    speedTxt = motor_speed;
+    speedTxt = mixerData.motorSpeed1;
     
   document.getElementById("motorSpeed").innerHTML = speedTxt;
 }
 
+function updateModeler(data) {
+  // get data
+  modelerData.operating = data.OPERATING;
+  modelerData.motorSpeed1 = data.MOTOR_SPEED1; // extruder
+  modelerData.motorSpeed2 = data.MOTOR_SPEED2; // molding block
+  
+  // set HTML values
+  document.getElementById("extruderSliderAmount").value = modelerData.motorSpeed1;
+  document.getElementById("mBSliderAmount").value = modelerData.motorSpeed2;
+}
+
+function updateGranulator(data) {
+  // get data
+  granulatorData.operating = data.OPERATING;
+  granulatorData.motorSpeed1 = data.MOTOR_SPEED1; // rotation blades
+  granulatorData.motorSpeed2 = data.MOTOR_SPEED2; // mattres
+  
+  // set HTML values
+  document.getElementById("rotationBladeSliderAmount").value = granulatorData.motorSpeed1;
+  document.getElementById("matSliderAmount").value = granulatorData.motorSpeed2;
+}
+
+// format seconds display text for mixer
 function pad(num) {
     num = num.toString();
     return (num.length < 2) ? num = "0" + num : num;
 }
 
+// Mixer Functions -----------------------------------------------------------------
 function operationTime(operationTime) {
   var textSpanTime = document.getElementById("operationTime");
   textSpanTime.innerHTML = operationTime + ":00";
-  operation_time = operationTime * 60; // in seconds
+  mixerData.operationTime = operationTime * 60; // in seconds
+  // operation_time = operationTime * 60; // in seconds
   console.log("Operation Time is set to " + operationTime);
 }
 
 function button_1_on()
 { 
-  if(operation_time === "" || operation_time == "0"){
-    console.log("Please enter a time, operation time: " + operation_time);
+  if(mixerData.operationTime === "" || mixerData.operationTime == "0"){
+    console.log("Please enter a time, operation time: " + mixerData.operationTime);
     return;
   }
   // hide operation time setter
@@ -199,55 +269,112 @@ function button_1_on()
     document.getElementById("sliderAmount").innerHTML = 50;
   }
   
-  send_data();
+  send_data(mixerData);
 }
 
 function button_1_off()
 {
-  operation_time = 0;
+  mixerData.operationTime = 0;
   // reveal operation time setter
   document.getElementById("txtOperationTime").style.display = "";
-  document.getElementById("operationTime").innerHTML = operation_time + ":00";
+  document.getElementById("operationTime").innerHTML = mixerData.operationTime + ":00";
   
   motor_speed = 0;
   document.getElementById("motorSpeed").innerHTML = "SPEED_OFF";
   document.getElementById("sliderAmount").innerHTML = 0;
   
-  send_data();
+  send_data(mixerData);
 }
 
 function updateSlider(slideAmount) {
+  // update mixer motor speed
+  mixerData.motorSpeed1 = slideAmount;
+  
+  // update HTML
   var sliderDiv = document.getElementById("sliderAmount");
   sliderDiv.innerHTML = slideAmount;
-  slider_val = slideAmount;
-  console.log("Slider Amount is" + slideAmount);
   
   var speedTxt = "";
   if(slideAmount > 50)
-  {
-  	motor_speed = 2;
     speedTxt = "SPEED_V2";
-  }
   else if(slideAmount > 0)
-  {
-  	motor_speed = 1;
     speedTxt = "SPEED_V1";
-  }
   else
-  {
-  	motor_speed = 0;
     speedTxt = "SPEED_OFF";
-  }
     
   document.getElementById("motorSpeed").innerHTML = speedTxt;
 }
 
-// Sending data to NODE_MCU
-function send_data()
-{
-  var timeMillis = operation_time * 1000;
-  var full_data = '{"OPERATION_TIME":'+timeMillis+', "MOTOR_SPEED":'+motor_speed+'}';
-  connection.send(full_data);
+
+// Modeler Functions -----------------------------------------------------------------
+function updateExtruderSlider(slideAmount) {
+  // update data
+  modelerData.motorSpeed1 = slideAmount;
+  
+  // update HTML
+  var sliderDiv = document.getElementById("extruderSliderAmount");
+  sliderDiv.innerHTML = slideAmount;
+  
+  // update machine data
+  send_data(modelerData);
+}
+
+function updateMBSlider(slideAmount) {
+  // update data
+  modelerData.motorSpeed2 = slideAmount;
+  
+  // update HTML
+  var sliderDiv = document.getElementById("mBSliderAmount");
+  sliderDiv.innerHTML = slideAmount;
+  
+  // update machine data
+  send_data(modelerData);
+}
+
+function buttonExtruderOn() {
+  modelerData.operating = true;
+  send_data(modelerData);
+}
+
+function buttonExtruderOff() {
+  modelerData.operating = false;
+  send_data(modelerData);
+}
+
+
+// Granulator Functions -----------------------------------------------------------------
+function rotationBladeSlider(slideAmount) {
+  // update data
+  granulatorData.motorSpeed1 = slideAmount;
+  
+  // update HTML
+  var sliderDiv = document.getElementById("rotationBladeSliderAmount");
+  sliderDiv.innerHTML = slideAmount;
+  
+  // update machine data
+  send_data(granulatorData);
+}
+
+function matSlider(slideAmount) {
+  // update data
+  granulatorData.motorSpeed2 = slideAmount;
+  
+  // update HTML
+  var sliderDiv = document.getElementById("matSliderAmount");
+  sliderDiv.innerHTML = slideAmount;
+  
+  // update machine data
+  send_data(granulatorData);
+}
+
+function buttonGranulatorOn() {
+  granulatorData.operating = true;
+  send_data(granulatorData);
+}
+
+function buttonGranulatorOff() {
+  granulatorData.operating = false;
+  send_data(granulatorData);
 }
 
 
@@ -269,8 +396,9 @@ function send_data()
     .reading { font-size: 2.8rem; }
     .timestamp { color: #bebebe; font-size: 1rem; }
     .card-title{ font-size: 1.2rem; font-weight : bold; }
-    .card.temperature { color: #B10F2E; }
-    .card.humidity { color: #50B8B4; }
+    .card.mixer { color: #B10F2E; }
+    .card.extruder { color: #50B8B4; }
+    .card.granulator { color: #824dc4; }
   </style>
 </head>
 
@@ -280,22 +408,66 @@ function send_data()
   </div>
   <div class="content">
     <div class="cards">
-      <div class="card temperature">
-        <p class="card-title"><i class="fas fa-chart-area"></i> Controle de Funcao</p>
+
+      <div class="card mixer">
+        <p class="card-title"><i class="fas fa-stopwatch"></i> Tempo de Operacao</p>
         <input type="number" name="txtOperationTime" id="txtOperationTime" placeholder="Enter Time" onchange="operationTime(this.value)">
         <p><span class="reading"><span id="operationTime"></span></span> <i class="fas fa-hourglass"></i> </p>
         <button onclick= "button_1_on()" >On</button>
         <button onclick="button_1_off()" >Off</button>
       </div>
-      <div class="card humidity">
-        <p class="card-title"><i class="fas fa-ring"></i> Controle de Velocidade</p><p>
+      <div class="card mixer">
+        <p class="card-title"><i class="fas fa-tachometer-alt"></i></i> Velocidade Rotacao</p><p>
         <div class="slidecontainer">
-          <p>Motor speed percentage:</p>
+          <p>Porcentagem de velocidade de rotacao:</p>
           <input type="range" min="0" max="100" value="0" step="1" onchange="updateSlider(this.value)">
         </div>
         <div id="motorSpeed"></div>
         </p><p class="timestamp">Velocidade: <span id="sliderAmount"></span>%</p>
       </div>
+      
+      <div class="card extruder">
+        <p class="card-title"><i class="fas fa-tachometer-alt"></i> Velocidade Extrusora</p><p>
+        <div class="slidecontainer">
+          <p>Porcentagem de velocidade de rotacao:</p>
+          <input type="range" min="0" max="100" value="0" step="1" onchange="updateExtruderSlider(this.value)">
+        </div>
+        <button onclick="buttonExtruderOn()" >On</button>
+        <button onclick="buttonExtruderOff()" >Off</button>
+        <div id="motorSpeed"></div>
+        </p><p class="timestamp">Velocidade: <span id="extruderSliderAmount"></span>%</p>
+      </div>
+      <div class="card extruder">
+        <p class="card-title"><i class="fas fa-tachometer-alt"></i> Velocidade Bloco Modelador</p><p>
+        <div class="slidecontainer">
+          <p>Porcentagem de velocidade de rotacao:</p>
+          <input type="range" min="0" max="100" value="0" step="1" onchange="updateMBSlider(this.value)">
+        </div>
+        <div id="motorSpeed"></div>
+        </p><p class="timestamp">Velocidade: <span id="mBSliderAmount"></span>%</p>
+      </div>
+      
+      <div class="card granulator">
+        <p class="card-title"><i class="fas fa-tachometer-alt"></i> Velocidade Pas de Rotacao</p><p>
+        <div class="slidecontainer">
+          <p>Porcentagem de velocidade de rotacao:</p>
+          <input type="range" min="0" max="100" value="0" step="1" onchange="rotationBladeSlider(this.value)">
+        </div>
+        <button onclick="buttonGranulatorOn()" >On</button>
+        <button onclick="buttonGranulatorOff()" >Off</button>
+        <div id="motorSpeed"></div>
+        </p><p class="timestamp">Velocidade: <span id="rotationBladeSliderAmount"></span>%</p>
+      </div>
+      <div class="card granulator">
+        <p class="card-title"><i class="fas fa-tachometer-alt"></i> Velocidade Esteira</p><p>
+        <div class="slidecontainer">
+          <p>Porcentagem de velocidade de rotacao:</p>
+          <input type="range" min="0" max="100" value="0" step="1" onchange="matSlider(this.value)">
+        </div>
+        <div id="motorSpeed"></div>
+        </p><p class="timestamp">Velocidade: <span id="matSliderAmount"></span>%</p>
+      </div>
+
     </div>
   </div>
 </body>

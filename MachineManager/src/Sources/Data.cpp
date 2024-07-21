@@ -4,7 +4,6 @@ void Data::dataFromJson(String message)
 {
     DynamicJsonDocument doc(200);
     DeserializationError error = deserializeJson(doc, message);
-    // parse the parameters we expect to receive (TO-DO: error handling)
     if (error)
     {
         Serial.print("deserializeJson() failed: ");
@@ -14,24 +13,40 @@ void Data::dataFromJson(String message)
 
     // Object (named doc) in struct format becomes available with data received
     // Used only when server receives data from webpage
+    dataSource = String(doc["DATA_SOURCE"]);
+    operating = doc["OPERATING"];
     operationTime = doc["OPERATION_TIME"];
-    motorSpeed = doc["MOTOR_SPEED"];
-    Serial.println("DEserialized Data: ");
-    String msg = String(operationTime) + " speed: " + String(motorSpeed);
-    Serial.println(msg);
+    motorSpeed1 = doc["MOTOR_SPEED1"];
+    motorSpeed2 = doc["MOTOR_SPEED2"];
+
+    // Serial.println("DEserialized Data: ");
+    // printData();
 }
 
 String Data::sendJsonDataServer()
 {
     DynamicJsonDocument doc(200);
+    doc["DATA_SOURCE"] = dataSource;
+    doc["OPERATING"] = operating;
     doc["OPERATION_TIME"] = operationTime;
-    doc["MOTOR_SPEED"] = motorSpeed;
-
-    // Serial.print("serializeJson() succesfull");
+    doc["MOTOR_SPEED1"] = motorSpeed1;
+    doc["MOTOR_SPEED2"] = motorSpeed2;
 
     String msg;
     serializeJson(doc, msg);
     Serial.println("serialized Data: ");
     Serial.println(msg);
     return msg;
+}
+
+void Data::printData()
+{
+    String msg =
+    "Data source: " + String(dataSource) +
+    " operating: " + String(operating) +
+    " operation time: " + String(operationTime) +
+    " motorSpeed1: " + String(motorSpeed1) +
+    " motorSpeed2: " + String(motorSpeed2);
+
+    Serial.println(msg);
 }
