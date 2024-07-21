@@ -46,9 +46,9 @@
  * :[MACHINE_SERVER, MACHINE_MIXER, MACHINE_MODELER, MACHINE_PACKER]
  * OBS! : Only ONE option must be set as true!!!
  */
-#define MACHINE_SERVER false
+#define MACHINE_SERVER true
 #define MACHINE_MIXER false
-#define MACHINE_MODELER true
+#define MACHINE_MODELER false
 #define MACHINE_GRANULATOR false
 
 /**
@@ -156,7 +156,7 @@
 #define EXTRUDER_MAX_SPEED 500
 #define EXTRUDER_SPEED 400
 #define EXTRUDER_STEP_DELAY 800
-#define EXTRUDER_SKIPS 170
+#define EXTRUDER_SKIPS 300
 
 // Molding Block
 #define MB_MAX_SPEED 1000

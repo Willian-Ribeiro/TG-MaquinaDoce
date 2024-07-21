@@ -82,16 +82,17 @@ void ModelerMain::runMotors()
     _motorsON = true;
 }
 
+// move the stepper motor (one step at a time)
 void ModelerMain::runExtruderMotor()
 {
-    // move the stepper motor (one step at a time)
+    // it is not possible to use delay to send another digitalwrite command, so
+    // it is required to skip the command before being issued again
     if(_skipCounterExtruder > 0){
         _skipCounterExtruder--;
         return;
     }
-
+    
     digitalWrite(EXTRUDER_STEP, highLow);
-    // delayMicroseconds(EXTRUDER_STEP_DELAY);
     _skipCounterExtruder = EXTRUDER_SKIPS - extruderSpeed;
     highLow = !highLow;
 }
@@ -133,6 +134,7 @@ void ModelerMain::stopMoldingBlockM1()
     stepperMoldingBlockM1.stop();
     moldingBlockOn = false;
     _moldingBlockM1MoveDirection = -1;
+    stepperMoldingBlockM1.setSpeed(-MB_EOC_CALIBRATION_SPEED);
     calibrateMoldingBlockMotors = true; // after a stop, a calibration is required
 }
 
