@@ -34,22 +34,22 @@ void MixerMain::loopMixer(void)
     lcdCheckTouch();
     if(EspNowCallbacks::updateData(myData))
     {
-        // update current values
-        operationTime = myData->operationTime;
+        // check if operation status just changed, so turn on/off should be called
+        boolean updateMachineOperationStatus = (machineOperating && !myData->operating) || (!machineOperating && myData->operating);
 
-        // map incoming value to motor speed
-        if(myData->motorSpeed1 > 50)
-            currentSpeed = SPEED_V2;
-        else if(myData->motorSpeed1 > 0)
-            currentSpeed = SPEED_V1;
-        else
-            currentSpeed = SPEED_OFF;
+        // update machine state
+        machineOperating = myData->operating;
+        operationTime = myData->operationTime;
+        currentSpeed = myData->motorSpeed1;
 
         // check what operations should be done
-        if(!machineOperating && operationTime > 0)
+        if(updateMachineOperationStatus && machineOperating && operationTime > 0)
             startMixer(millis());
-        else if(machineOperating && operationTime == 0)
+        else if(updateMachineOperationStatus && !machineOperating)
             stopMixer();
+        
+        // update mixer speed and set motors parameters
+        setMixerSpeed(currentSpeed);
     }
 
     if(machineOperating)
@@ -69,16 +69,15 @@ void MixerMain::updateTimer(void)
             machineOperating = false;
             operationTime = 0;
             setMixerSpeed(SPEED_OFF);
-            myData->operationTime = operationTime;
             stopBtn();
         }
         else
         {
             operationTime = finishTime - timeNow;
-            myData->operationTime = operationTime;
             timeBtn();
         }
 
+        updateData();
         EspNowCallbacks::sendMessage(Machines::server, *myData);
     }
 }
@@ -87,7 +86,6 @@ void MixerMain::startMixer(unsigned long int currentTime)
 {
     // start a counter and make it update myData.operationTime
     machineOperating = true;
-
     startTime = currentTime;
     finishTime = startTime + operationTime;
 
@@ -102,8 +100,8 @@ void MixerMain::startMixer(unsigned long int currentTime)
         setMixerSpeed(currentSpeed);
         v2Btn();
     }
-    myData->operationTime = operationTime;
 
+    updateData();
     EspNowCallbacks::sendMessage(Machines::server, *myData);
 };
 
@@ -111,47 +109,50 @@ void MixerMain::stopMixer()
 {
     // stop a counter
     operationTime = 0;
-    myData->operationTime = 0;
 
     setMixerSpeed(SPEED_OFF);
 
-    // must be set agter mixer speed
+    // must be set after mixer speed
     machineOperating = false;
 
     stopBtn();
 
+    updateData();
     EspNowCallbacks::sendMessage(Machines::server, *myData);
 };
 
 void MixerMain::setMixerSpeed(int speed)
 {
+    currentSpeed = speed;
     switch (speed)
     {
-    case SPEED_V1:
-        if (machineOperating)
-        {
-            digitalWrite(RELAY_1, !HIGH);
+        case SPEED_V1:
+            if (machineOperating)
+            {
+                digitalWrite(RELAY_1, !HIGH);
+                digitalWrite(RELAY_2, !LOW);
+            }
+            break;
+        case SPEED_V2:
+            if (machineOperating)
+            {
+                digitalWrite(RELAY_1, !HIGH);
+                digitalWrite(RELAY_2, !HIGH);
+            }
+            break;
+        default:
+            digitalWrite(RELAY_1, !LOW);
             digitalWrite(RELAY_2, !LOW);
-        }
-        currentSpeed = SPEED_V1;
-        myData->motorSpeed1 = currentSpeed;
-        break;
-    case SPEED_V2:
-        if (machineOperating)
-        {
-            digitalWrite(RELAY_1, !HIGH);
-            digitalWrite(RELAY_2, !HIGH);
-        }
-        currentSpeed = SPEED_V2;
-        myData->motorSpeed1 = currentSpeed;
-        break;
-    default:
-        digitalWrite(RELAY_1, !LOW);
-        digitalWrite(RELAY_2, !LOW);
-        currentSpeed = SPEED_OFF;
-        myData->motorSpeed1 = currentSpeed;
-        break;
+            currentSpeed = SPEED_OFF;
+            break;
     }
+}
+
+void MixerMain::updateData()
+{
+    myData->operating = machineOperating;
+    myData->operationTime = operationTime;
+    myData->motorSpeed1 = currentSpeed;
 }
 
 // veifies if a touch happened and where
@@ -223,11 +224,7 @@ void MixerMain::lcdCheckTouch()
                 if ((y > ONEPLUS_BTN_Y) && (y <= (ONEPLUS_BTN_Y + ONEPLUS_BTN_H)))
                 {
                     Serial.println("OnePlus btn hit");
-                    // onePlusBtn();
-                    operationTime += 1 * 60 * 1000; // millis
-                    if(operationTime > 99 * 60 * 1000) // max time is 99min
-                        operationTime = 99 * 60 * 1000;
-
+                    addTime(1);
                     timeBtn();
                 }
             }
@@ -238,21 +235,18 @@ void MixerMain::lcdCheckTouch()
                 if ((y > FIVEPLUS_BTN_Y) && (y <= (FIVEPLUS_BTN_Y + FIVEPLUS_BTN_H)))
                 {
                     Serial.println("Five Plus btn hit");
-                    // fivePlusBtn();
-                    operationTime += 5 * 60 * 1000;
-                    if(operationTime > 99 * 60 * 1000) // max time is 99min
-                        operationTime = 99 * 60 * 1000;
-
+                    addTime(5);
                     timeBtn();
                 }
             }
 
-            // check time button
+            // check time button - actually is the display time square
             if ((x > TIME_BTN_X) && (x < (TIME_BTN_X + TIME_BTN_W)))
             {
                 if ((y > TIME_BTN_Y) && (y <= (TIME_BTN_Y + TIME_BTN_H)))
                 {
                     Serial.println("Time btn hit");
+                    // no function to do so far
                     // timeBtn();
                 }
             }
@@ -263,13 +257,7 @@ void MixerMain::lcdCheckTouch()
                 if ((y > ONEMINUS_BTN_Y) && (y <= (ONEMINUS_BTN_Y + ONEMINUS_BTN_H)))
                 {
                     Serial.println("OneMinus btn hit");
-                    // oneMinusBtn();
-                    
-                    if(operationTime < 1 * 60 * 1000)
-                        operationTime = 0;
-                    else
-                        operationTime -= 1 * 60 * 1000;
-
+                    reduceTime(1);
                     timeBtn();
                 }
             }
@@ -280,13 +268,7 @@ void MixerMain::lcdCheckTouch()
                 if ((y > FIVEMINUS_BTN_Y) && (y <= (FIVEMINUS_BTN_Y + FIVEMINUS_BTN_H)))
                 {
                     Serial.println("FiveMinus btn hit");
-                    // fiveMinusBtn();
-                    
-                    if(operationTime < 5 * 60 * 1000)
-                        operationTime = 0;
-                    else
-                        operationTime -= 5 * 60 * 1000;
-
+                    reduceTime(5);
                     timeBtn();
                 }
             }
@@ -294,6 +276,23 @@ void MixerMain::lcdCheckTouch()
         
     }
 }
+
+void MixerMain::addTime(int time)
+{
+    operationTime += time * 60 * 1000; // millis
+    if(operationTime > 99 * 60 * 1000) // max time is 99min
+        operationTime = 99 * 60 * 1000;
+}
+
+void MixerMain::reduceTime(int time)
+{
+    if(operationTime < time * 60 * 1000)
+        operationTime = 0;
+    else
+        operationTime -= time * 60 * 1000;
+}
+
+// draw on LCD screen functions
 
 void MixerMain::drawFrame1()
 {

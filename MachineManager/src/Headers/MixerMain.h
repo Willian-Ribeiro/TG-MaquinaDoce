@@ -6,6 +6,7 @@
 
 #include "./Headers/EspNowCallbacks.h"
 
+// definitions to draw LCD layout
 // FRAME1 position and size
 #define FRAME1_X (2*LCD_WIDTH/32)
 #define FRAME1_W (28*LCD_WIDTH/32)
@@ -81,7 +82,7 @@
 class MixerMain
 {
     private:
-        unsigned long int currentSpeed = SPEED_OFF;
+        unsigned long int currentSpeed = SPEED_OFF; // can be only 0, 1 or 2
         unsigned long int operationTime = 0; // millis
         unsigned long int previousTime = 0; // used to update Time in LCD every second
         unsigned long int startTime = 0; // operation start time
@@ -92,33 +93,33 @@ class MixerMain
 
         Data* myData = new Data();
         static EspNowCallbacks espnow;
-        TFT_eSPI tft = TFT_eSPI();
+        TFT_eSPI tft = TFT_eSPI(); // library to control LCD
 
     public:
         void setupMixer();
         void loopMixer();
         
+        // state changing functions
         void updateTimer();
         void setMixerSpeed(int speed);
         void lcdCheckTouch();
-        void touch_calibrate();
+        void timeBtn();
+        void addTime(int time); // time in minutes
+        void reduceTime(int time); // time in minutes
+        void startMixer(unsigned long int currentTime);
+        void stopMixer();
+        void updateData();
 
+        // draw on LCD screen functions
         void drawFrame1();
+        void drawFrame2();
         void offBtn();
         void v1Btn();
         void v2Btn();
-
-        void drawFrame2();
-        // void onePlusBtn();
-        // void fivePlusBtn();
-        void timeBtn();
-        // void oneMinusBtn();
-        // void fiveMinusBtn();
-
         void drawFrame3();
         void startBtn();
         void stopBtn();
+        void touch_calibrate();
 
-        void startMixer(unsigned long int currentTime);
-        void stopMixer();
+        
 };
