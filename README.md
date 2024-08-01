@@ -4,7 +4,10 @@
 
 Máquinas:
 1 - Mixer
-2 - Moddeladora
+2 - Modeladora
 3 - Granuladora
-4 - Injetora
-5 - Empacotadora
+4 - Web Servidor
+
+
+Para melhor visualização do projeto, abrir ele no VSCode com a extensão PlatformIO, a qual consegue reconhecer código Arduino assim como suas bibliotecas.
+
